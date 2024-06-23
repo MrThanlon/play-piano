@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onBeforeMount } from 'vue'
+import { onBeforeMount } from 'vue'
 import { start, frequencies } from '../utils/midi'
 
 type Tune = {
@@ -55,24 +55,6 @@ onBeforeMount(async () => {
     }
   })
 })
-
-function play(frequency: number): Tune {
-  const gain = ac.createGain()
-  gain.gain.value = 1
-  gain.connect(ac.destination) 
-  const oscillator = ac.createOscillator()
-  oscillator.type = 'sine'
-  oscillator.frequency.value = frequency // 不能直接给frequency负值，可以设置其value
-  // oscillator.frequency.exponentialRampToValueAtTime(440, 1) // 也可以通过它提供的方法来设置
-  oscillator.connect(gain)
-  oscillator.start()
-  const timer = setInterval(() => {
-    gain.gain.value *= 0.99
-  })
-  return {
-    oscillator, gain, timer
-  }
-}
 
 </script>
 
