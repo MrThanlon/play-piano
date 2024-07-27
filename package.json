@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mrthanlon/webaudiofont": "^4.0.0",
     "vue": "^3.4.29"
   },
   "devDependencies": {
