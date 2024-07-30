@@ -3,6 +3,7 @@ import { onBeforeMount, ref } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
 import Staff from '../components/Staff.vue'
+import { Staff as S } from '../utils/staff'
 
 const ac = new AudioContext()
 const player = new WebAudioFontPlayer()
@@ -46,6 +47,13 @@ function startPlay() {
   midiNoteOn(60, 20)
 }
 
+function loadStaff(event: Event) {
+  const file = (event.target as any).files[0]
+  console.log(file)
+  const staff = new S(1, 1)
+  staff.loadMSCX(file)
+}
+
 onBeforeMount(async () => {
   await start(({ data }) => {
     if (!data) {
@@ -74,6 +82,7 @@ onBeforeMount(async () => {
     </option>
   </select>
   <button @click="startPlay">play</button>
+  <input @change="loadStaff" type="file">
 </template>
 
 <style scoped>

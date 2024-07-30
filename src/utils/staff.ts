@@ -11,6 +11,7 @@ export class Staff {
     // treat buffer as xml
     const parser = new DOMParser()
     const dom = parser.parseFromString(await buffer.text(), 'text/xml')
+    console.log(dom)
   }
 
   async loadMSCZ(buffer: Blob) {
