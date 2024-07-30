@@ -2,6 +2,7 @@
 import { onBeforeMount, ref } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
+import Staff from '../components/Staff.vue'
 
 const ac = new AudioContext()
 const player = new WebAudioFontPlayer()
@@ -47,6 +48,9 @@ function startPlay() {
 
 onBeforeMount(async () => {
   await start(({ data }) => {
+    if (!data) {
+      return
+    }
     const type = data[0] & 0xf0
     if (type === 144) {
       midiNoteOn(data[1], data[2])
@@ -63,6 +67,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
+  <Staff></Staff>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
       {{ getInstrumentTitle(idx) }}
