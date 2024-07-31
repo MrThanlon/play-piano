@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { onBeforeMount, ref } from 'vue'
+import { onBeforeMount, ref, onMounted } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
-import Staff from '../components/Staff.vue'
 import { Staff as S } from '../utils/staff'
+
+const div = ref<HTMLElement>()
+const staff = new S(600, 400)
+
+onMounted(() => {
+  if (div.value)
+    staff.mount(div.value)
+})
 
 const ac = new AudioContext()
 const player = new WebAudioFontPlayer()
@@ -49,8 +56,6 @@ function startPlay() {
 
 function loadStaff(event: Event) {
   const file = (event.target as any).files[0]
-  console.log(file)
-  const staff = new S(1, 1)
   staff.loadMSCX(file)
 }
 
@@ -75,7 +80,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <Staff></Staff>
+  <div ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
       {{ getInstrumentTitle(idx) }}
