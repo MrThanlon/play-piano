@@ -90,5 +90,8 @@ onBeforeMount(async () => {
   <input @change="loadStaff" type="file">
 </template>
 
-<style scoped>
+<style>
+canvas {
+  border: 1px solid black;
+}
 </style>
