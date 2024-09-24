@@ -2,15 +2,44 @@
 import { onBeforeMount, ref, onMounted } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
-import { Staff as S } from '../utils/staff'
+import * as opensheetmusicdisplay from 'opensheetmusicdisplay'
 
 const div = ref<HTMLElement>()
-const staff = new S(600, 400)
+const input = ref<HTMLInputElement>()
 
 onMounted(() => {
-  if (div.value)
-    staff.mount(div.value)
+  // if (div.value)
+  //   staff.mount(div.value)
+
+  if (div.value) {
+    const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(div.value, {
+      backend: 'svg',
+      drawTitle: true
+    })
+    osmd
+    .load("/MozaVeilSample.xml")
+    .then(() => {
+      // remove none piano instruments
+      osmd.Sheet.Instruments.forEach(instrument => {
+        if (instrument.Name !== 'Piano') {
+          instrument.Visible = false
+        }
+      })
+      osmd.render()
+      const cursor = osmd.cursor
+      cursor.show()
+      const cursorVoiceEntry = cursor.Iterator.CurrentVoiceEntries[0]
+      // const lowestVoiceEntryNote = cursorVoiceEntry.Notes[0]
+      console.log(cursorVoiceEntry)
+    })
+  }
+  if (input.value) {
+  }
 })
+
+function loadStaff(_event: Event) {
+  console.log(input.value?.files)
+}
 
 const ac = new AudioContext()
 const player = new WebAudioFontPlayer()
@@ -54,11 +83,6 @@ function startPlay() {
   midiNoteOn(60, 20)
 }
 
-function loadStaff(event: Event) {
-  const file = (event.target as any).files[0]
-  staff.loadMSCX(file)
-}
-
 onBeforeMount(async () => {
   await start(({ data }) => {
     if (!data) {
@@ -80,14 +104,14 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <div ref="div"></div>
+  <div ref="div" style="background-color: white; width: 100%;"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
       {{ getInstrumentTitle(idx) }}
     </option>
   </select>
   <button @click="startPlay">play</button>
-  <input @change="loadStaff" type="file">
+  <input @change="loadStaff" ref="input" type="file">
 </template>
 
 <style>
