@@ -2,45 +2,66 @@
 import { onBeforeMount, ref, onMounted } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
-import * as opensheetmusicdisplay from 'opensheetmusicdisplay'
+import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay'
 
+// Sheet
 const div = ref<HTMLElement>()
 const input = ref<HTMLInputElement>()
+let osmd: OpenSheetMusicDisplay
 
-onMounted(() => {
-  // if (div.value)
-  //   staff.mount(div.value)
-
+onMounted(async () => {
   if (div.value) {
-    const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(div.value, {
+    osmd = new OpenSheetMusicDisplay(div.value, {
       backend: 'svg',
       drawTitle: true
     })
-    osmd
-    .load("/MozaVeilSample.xml")
-    .then(() => {
-      // remove none piano instruments
-      osmd.Sheet.Instruments.forEach(instrument => {
-        if (instrument.Name !== 'Piano') {
-          instrument.Visible = false
-        }
-      })
-      osmd.render()
-      const cursor = osmd.cursor
-      cursor.show()
-      const cursorVoiceEntry = cursor.Iterator.CurrentVoiceEntries[0]
-      // const lowestVoiceEntryNote = cursorVoiceEntry.Notes[0]
-      console.log(cursorVoiceEntry)
+    const text = localStorage.getItem('sheet')
+    if (text) {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(text, 'text/xml')
+      await osmd.load(doc)
+    } else {
+      await osmd.load('/MozaVeilSample.xml')
+    }
+    // remove none piano instruments
+    osmd.Sheet.Instruments.forEach(instrument => {
+      if (instrument.Name !== 'Piano') {
+        instrument.Visible = false
+      }
     })
+    osmd.render()
+    const cursor = osmd.cursor
+    cursor.show()
+    const cursorVoiceEntry = cursor.Iterator.CurrentVoiceEntries[0]
+    // const lowestVoiceEntryNote = cursorVoiceEntry.Notes[0]
+    console.log(cursorVoiceEntry)
   }
   if (input.value) {
   }
 })
 
-function loadStaff(_event: Event) {
-  console.log(input.value?.files)
+async function loadSheet(_event: Event) {
+  if (!input.value) {
+    return
+  }
+  if (!input.value.files) {
+    return
+  }
+  const parser = new DOMParser()
+  const file = input.value.files[0]
+  const text = await file.text()
+  localStorage.setItem('sheet', text)
+  const doc = parser.parseFromString(text, 'text/xml')
+  await osmd.load(doc)
+  osmd.Sheet.Instruments.forEach(instrument => {
+    if (instrument.Name !== 'Piano') {
+      instrument.Visible = false
+    }
+  })
+  osmd.render()
 }
 
+// Audio
 const ac = new AudioContext()
 const player = new WebAudioFontPlayer()
 player.loader.decodeAfterLoading(ac, '_tone_0000_JCLive_sf2_file')
@@ -111,7 +132,7 @@ onBeforeMount(async () => {
     </option>
   </select>
   <button @click="startPlay">play</button>
-  <input @change="loadStaff" ref="input" type="file">
+  <input @change="loadSheet" ref="input" type="file">
 </template>
 
 <style>
