@@ -9,6 +9,18 @@ const div = ref<HTMLElement>()
 const input = ref<HTMLInputElement>()
 let osmd: OpenSheetMusicDisplay
 
+async function loadSheet(xml: string) {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(xml, 'text/xml')
+  await osmd.load(doc)
+  osmd.Sheet.Instruments.forEach(instrument => {
+    if (instrument.Name !== 'Piano') {
+      instrument.Visible = false
+    }
+  })
+  osmd.render()
+}
+
 onMounted(async () => {
   if (div.value) {
     osmd = new OpenSheetMusicDisplay(div.value, {
@@ -17,48 +29,25 @@ onMounted(async () => {
     })
     const text = localStorage.getItem('sheet')
     if (text) {
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(text, 'text/xml')
-      await osmd.load(doc)
+      loadSheet(text)
     } else {
-      await osmd.load('/MozaVeilSample.xml')
+      const text = await import('../sheets/MozaVeilSample.xml?raw')
+      loadSheet(text.default)
     }
-    // remove none piano instruments
-    osmd.Sheet.Instruments.forEach(instrument => {
-      if (instrument.Name !== 'Piano') {
-        instrument.Visible = false
-      }
-    })
-    osmd.render()
-    const cursor = osmd.cursor
-    cursor.show()
-    const cursorVoiceEntry = cursor.Iterator.CurrentVoiceEntries[0]
-    // const lowestVoiceEntryNote = cursorVoiceEntry.Notes[0]
-    console.log(cursorVoiceEntry)
-  }
-  if (input.value) {
   }
 })
 
-async function loadSheet(_event: Event) {
+async function loadSheetFile(_event: Event) {
   if (!input.value) {
     return
   }
   if (!input.value.files) {
     return
   }
-  const parser = new DOMParser()
   const file = input.value.files[0]
   const text = await file.text()
   localStorage.setItem('sheet', text)
-  const doc = parser.parseFromString(text, 'text/xml')
-  await osmd.load(doc)
-  osmd.Sheet.Instruments.forEach(instrument => {
-    if (instrument.Name !== 'Piano') {
-      instrument.Visible = false
-    }
-  })
-  osmd.render()
+  loadSheet(text)
 }
 
 // Audio
@@ -132,7 +121,7 @@ onBeforeMount(async () => {
     </option>
   </select>
   <button @click="startPlay">play</button>
-  <input @change="loadSheet" ref="input" type="file">
+  <input @change="loadSheetFile" ref="input" type="file">
 </template>
 
 <style>
