@@ -13,13 +13,22 @@ let osmd: OpenSheetMusicDisplay
 async function loadSheet(xml: string) {
   const parser = new DOMParser()
   const doc = parser.parseFromString(xml, 'text/xml')
-  await osmd.load(doc)
-  osmd.Sheet.Instruments.forEach(instrument => {
-    if (instrument.Name !== 'Piano') {
-      instrument.Visible = false
-    }
-  })
-  osmd.render()
+  try {
+    await osmd.load(doc)
+    osmd.Sheet.Instruments.forEach(instrument => {
+      if (instrument.Name !== 'Piano') {
+        instrument.Visible = false
+      }
+      instrument.NameLabel.print = false
+    })
+    osmd.render()
+    const cursor = osmd.cursor
+    cursor.show()
+  } catch (e) {
+    console.log(doc)
+    console.log(e)
+    alert(e)
+  }
 }
 
 onMounted(async () => {
@@ -33,7 +42,7 @@ onMounted(async () => {
       loadSheet(text)
     } else {
       // load default sheet
-      const text = await import('../sheets/MozaVeilSample.xml?raw')
+      const text = await import('../sheets/Mary_Had_a_Little_Lamb.musicxml?raw')
       loadSheet(text.default)
     }
   }
@@ -124,7 +133,7 @@ onBeforeMount(async () => {
     </option>
   </select>
   <button @click="startPlay">play</button>
-  <input @change="loadSheetFile" ref="input" type="file">
+  <input @change="loadSheetFile" ref="input" type="file" accept=".musicxml,.xml">
 </template>
 
 <style scoped>
