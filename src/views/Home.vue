@@ -45,6 +45,8 @@ onMounted(async () => {
       const text = await import('../sheets/Mary_Had_a_Little_Lamb.musicxml?raw')
       loadSheet(text.default)
     }
+    // for debug
+    (window as any).osmd = osmd
   }
 })
 
