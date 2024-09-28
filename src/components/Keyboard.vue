@@ -2,11 +2,9 @@
 </script>
 
 <template>
-  <canvas ref=""></canvas>
+  <canvas style="width: 100%; height: 100px;"></canvas>
 </template>
 
 <style scoped>
-canvas {
-  border: 1px solid black;
-}
+
 </style>

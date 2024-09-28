@@ -3,6 +3,7 @@ import { onBeforeMount, ref, onMounted } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay'
+import Keyboard from '../components/Keyboard.vue'
 
 // Sheet
 const div = ref<HTMLElement>()
@@ -31,6 +32,7 @@ onMounted(async () => {
     if (text) {
       loadSheet(text)
     } else {
+      // load default sheet
       const text = await import('../sheets/MozaVeilSample.xml?raw')
       loadSheet(text.default)
     }
@@ -114,7 +116,8 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <div ref="div" style="background-color: white; width: 100%;"></div>
+  <Keyboard></Keyboard>
+  <div id="sheet-container" ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
       {{ getInstrumentTitle(idx) }}
@@ -124,8 +127,11 @@ onBeforeMount(async () => {
   <input @change="loadSheetFile" ref="input" type="file">
 </template>
 
-<style>
-canvas {
-  border: 1px solid black;
+<style scoped>
+#sheet-container {
+  background-color: white;
+  width: 100%;
+  height: 70vh;
+  overflow-y: auto;
 }
 </style>
