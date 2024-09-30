@@ -1,12 +1,22 @@
+let accessed = false
+
 export async function start(handler: (event: MIDIMessageEvent) => void) {
-  const midi = await navigator.requestMIDIAccess().catch(msg => {
-    console.error(`Failed to get MIDI access - ${msg}`);
-  })
-  if (midi) {
-    console.log("MIDI ready!")
-    listInputsAndOutputs(midi)
-    startLoggingMIDIInput(midi)
-  }
+  navigator.requestMIDIAccess({ sysex: true })
+    .then(midi => {
+      accessed = true
+      console.log("MIDI ready!")
+      listInputsAndOutputs(midi)
+      startLoggingMIDIInput(midi)
+    })
+    .catch(msg => {
+      accessed = true
+      console.error(`Failed to get MIDI access - ${msg}`)
+    })
+  setTimeout(() => {
+    if (!accessed) {
+      start(handler)
+    }
+  }, 2000)
 
   function listInputsAndOutputs(midiAccess: MIDIAccess) {
     for (const entry of midiAccess.inputs) {

@@ -89,21 +89,30 @@ function selectInstrument() {
   })
 }
 
+// midi
+const fills = ref<string[]>(Array(88).fill(''))
+const colorCorrect = '#00FF00'
+// function setKeyError(key: number) {
+//   fills[key] = '#FF0000'
+// }
 const midiNotes = new Map()
 
 function midiNoteOn(pitch: number, velocity: number) {
-  midiNoteOff(pitch);
+  midiNoteOff(pitch)
+  fills.value[pitch - 21] = colorCorrect
   const envelope = player.queueWaveTable(ac, ac.destination, tone, 0, pitch, 123456789, velocity / 100)
   midiNotes.set(pitch, envelope)
 }
 
 function midiNoteOff(pitch: number) {
+  fills.value[pitch - 21] = ''
   midiNotes.get(pitch)?.cancel()
   midiNotes.delete(pitch)
 }
 
 function startPlay() {
   midiNoteOn(60, 20)
+  midiNoteOff(60)
 }
 
 onBeforeMount(async () => {
@@ -118,7 +127,7 @@ onBeforeMount(async () => {
       midiNoteOff(data[1])
     }
     if (data && data[0] !== 0xe4) {
-      console.log(Array.from(data).map(v => v.toString(16)).join(' '))
+      // console.log(Array.from(data).map(v => v.toString(16)).join(' '))
       // console.log(`0x${data[0].toString(16)} 0x${data[1].toString(16)} 0x${data[2].toString(16)}`)
     }
   })
@@ -127,7 +136,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <Keyboard></Keyboard>
+  <Keyboard :fills="fills"></Keyboard>
   <div id="sheet-container" ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
