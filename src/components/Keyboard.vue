@@ -1,17 +1,30 @@
 <script setup lang="ts">
 import { defineProps, ref, onMounted } from 'vue'
 
-const props = defineProps([])
+const props = defineProps([
+
+])
 
 const w = 1
+const h = 10
+const bh = 6
 type Key = { color: string, points: number[], fill?: string }
-const k: Key[] = genKeys(2)
+const k: Key[] = genKeys(2, 0, w, h, bh)
 for (let i = 0; i < 7; i++) {
-  k.push(...genKeys(3, i * w * 12 + w * 3))
-  k.push(...genKeys(4, i * w * 12 + w * 8))
+  k.push(...genKeys(3, i * w * 12 + w * 3, w, h, bh))
+  k.push(...genKeys(4, i * w * 12 + w * 8, w, h, bh))
 }
-k.push(...genKeys(1, w * 87))
-k[34].fill = 'red'
+k.push({
+  color: 'white',
+  points: [
+    87 * w, 0,
+    87 * w, h,
+    88 + 0.75 * w, h,
+    88 + 0.75 * w, 0,
+  ]
+})
+k[39].fill = '#00ff00'
+k[45].fill = '#ff0000'
 const keys = ref<Key[]>(k)
 
 onMounted(() => {
@@ -56,7 +69,7 @@ function genKeys(white: number, offset: number = 0, w: number = 1, h: number = 1
 </script>
 
 <template>
-  <svg viewBox="0 0 88 10">
+  <svg viewBox="0 0 88.75 10">
     <polygon v-for="k in keys" :class="k.color" :style="{fill: k.fill}" :points="k.points.toString()"></polygon>
   </svg>
 </template>
@@ -69,6 +82,8 @@ function genKeys(white: number, offset: number = 0, w: number = 1, h: number = 1
 }
 .black {
   fill: black;
+  stroke: black;
+  stroke-width: 0.2%;
 }
 svg {
   width: 100%;
