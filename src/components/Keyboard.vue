@@ -4,13 +4,14 @@ import { defineProps, ref, onMounted } from 'vue'
 const props = defineProps([])
 
 const w = 1
-type Key = { color: 'white' | 'black', points: number[]}
+type Key = { color: string, points: number[], fill?: string }
 const k: Key[] = genKeys(2)
 for (let i = 0; i < 7; i++) {
   k.push(...genKeys(3, i * w * 12 + w * 3))
   k.push(...genKeys(4, i * w * 12 + w * 8))
 }
 k.push(...genKeys(1, w * 87))
+k[34].fill = 'red'
 const keys = ref<Key[]>(k)
 
 onMounted(() => {
@@ -56,7 +57,7 @@ function genKeys(white: number, offset: number = 0, w: number = 1, h: number = 1
 
 <template>
   <svg viewBox="0 0 88 10">
-    <polygon v-for="k in keys" :class="k.color" :points="k.points.toString()"></polygon>
+    <polygon v-for="k in keys" :class="k.color" :style="{fill: k.fill}" :points="k.points.toString()"></polygon>
   </svg>
 </template>
 
