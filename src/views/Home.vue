@@ -91,15 +91,25 @@ function selectInstrument() {
 
 // midi
 const fills = ref<string[]>(Array(88).fill(''))
+const expectedKeys = new Set<number>()
+let expectedKeyPressed = 0
 const colorCorrect = '#00FF00'
-// function setKeyError(key: number) {
-//   fills[key] = '#FF0000'
-// }
+const colorWrong = '#FF0000'
 const midiNotes = new Map()
 
 function midiNoteOn(pitch: number, velocity: number) {
   midiNoteOff(pitch)
-  fills.value[pitch - 21] = colorCorrect
+  const key = pitch - 21
+  if (expectedKeys.has(key)) {
+    // correct
+    expectedKeyPressed += 1
+    fills.value[key] = colorCorrect
+    if (expectedKeyPressed >= expectedKeys.size) {
+      // TODO: move sheet cursor to next
+    }
+  } else {
+    fills.value[key] = colorWrong
+  }
   const envelope = player.queueWaveTable(ac, ac.destination, tone, 0, pitch, 123456789, velocity / 100)
   midiNotes.set(pitch, envelope)
 }

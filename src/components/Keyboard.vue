@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { defineProps, onMounted, watchEffect } from 'vue'
+import { defineProps, onMounted } from 'vue'
 
 const props = defineProps<{
   fills: string[]
 }>()
-watchEffect(() => {
-  console.log(props.fills)
-})
 
 const w = 1
 const h = 10
