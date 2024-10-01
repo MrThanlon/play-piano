@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { defineProps, onMounted } from 'vue'
+import { defineProps, onMounted, watchEffect } from 'vue'
 
 const props = defineProps<{
   fills: string[]
 }>()
+watchEffect(() => {
+  console.log(props.fills)
+})
 
 const w = 1
 const h = 10
@@ -72,7 +75,6 @@ function genKeys(white: number, offset: number = 0, w: number = 1, h: number = 1
       :class="k.color"
       :style="{fill: props.fills[idx] || ''}"
       :points="k.points.toString()"
-      :key="props.fills[idx]"
     ></polygon>
   </svg>
 </template>

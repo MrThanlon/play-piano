@@ -2,13 +2,14 @@
 import { onBeforeMount, ref, onMounted } from 'vue'
 import { start } from '../utils/midi'
 import { WebAudioFontPlayer } from '@mrthanlon/webaudiofont'
-import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay'
+import { OpenSheetMusicDisplay, type Cursor } from 'opensheetmusicdisplay'
 import Keyboard from '../components/Keyboard.vue'
 
 // Sheet
 const div = ref<HTMLElement>()
 const input = ref<HTMLInputElement>()
 let osmd: OpenSheetMusicDisplay
+let cursor: Cursor
 
 async function loadSheet(xml: string) {
   const parser = new DOMParser()
@@ -22,8 +23,9 @@ async function loadSheet(xml: string) {
       instrument.NameLabel.print = false
     })
     osmd.render()
-    const cursor = osmd.cursor
+    cursor = osmd.cursor
     cursor.show()
+    extractNotes()
   } catch (e) {
     console.log(doc)
     console.log(e)
@@ -35,7 +37,8 @@ onMounted(async () => {
   if (div.value) {
     osmd = new OpenSheetMusicDisplay(div.value, {
       backend: 'svg',
-      drawTitle: true
+      drawTitle: true,
+      followCursor: true,
     })
     const text = localStorage.getItem('sheet')
     if (text) {
@@ -97,6 +100,25 @@ const colorCorrect = '#00FF00'
 const colorWrong = '#FF0000'
 const midiNotes = new Map()
 
+function extractNotes() {
+  let flagRest = true
+  expectedKeys.clear()
+  cursor.NotesUnderCursor().forEach(note => {
+    if (note.halfTone > 0) {
+      const key = note.halfTone + 3
+      expectedKeys.add(key)
+      fills.value[key] = colorCorrect
+      flagRest = false
+    }
+  })
+  if (flagRest) {
+    // go to next
+    cursor.next()
+    extractNotes()
+    cursor.update()
+  }
+}
+
 function midiNoteOn(pitch: number, velocity: number) {
   midiNoteOff(pitch)
   const key = pitch - 21
@@ -106,6 +128,9 @@ function midiNoteOn(pitch: number, velocity: number) {
     fills.value[key] = colorCorrect
     if (expectedKeyPressed >= expectedKeys.size) {
       // TODO: move sheet cursor to next
+      cursor.next()
+      extractNotes()
+      cursor.update()
     }
   } else {
     fills.value[key] = colorWrong
