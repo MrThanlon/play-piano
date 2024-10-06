@@ -192,7 +192,7 @@ onBeforeMount(async () => {
       // console.log(Array.from(data).map(v => v.toString(16)).join(' '))
       // console.log(`0x${data[0].toString(16)} 0x${data[1].toString(16)} 0x${data[2].toString(16)}`)
     }
-  })
+  }).catch(alert)
 })
 
 </script>

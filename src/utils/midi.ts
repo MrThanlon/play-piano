@@ -1,6 +1,10 @@
 let accessed = false
 
 export async function start(handler: (event: MIDIMessageEvent) => void) {
+  if (!navigator.requestMIDIAccess) {
+    // browser not support
+    throw "Your browser do not support MIDI, try Chrome or Firefox instead."
+  }
   navigator.requestMIDIAccess({ sysex: true })
     .then(midi => {
       accessed = true
