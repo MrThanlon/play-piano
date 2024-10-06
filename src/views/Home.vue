@@ -210,6 +210,7 @@ onBeforeMount(async () => {
   </select>
   <button @click="startPlay">play</button>
   <input @change="loadSheetFile" ref="input" type="file" accept=".musicxml,.xml">
+  <a href="https://github.com/MrThanlon/play-piano" target="_blank">About</a>
 </template>
 
 <style scoped>
