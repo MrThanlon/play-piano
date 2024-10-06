@@ -105,20 +105,21 @@ const midiNotes = new Map()
 function extractNotes() {
   let flagRest = true
   expectedKeys.clear()
-  fills.value.fill('')
+  let s = ''
   cursor.NotesUnderCursor().forEach(note => {
-    console.log(note.halfTone)
     if (note.halfTone > 0) {
       const key = note.halfTone + 3
       expectedKeys.add(key)
       fills.value[key] = colorExpected
-      console.log(`${key}: ${colorExpected}`)
       flagRest = false
+      s += key + ' '
     }
   })
+  console.log(s)
   if (flagRest) {
     // go to next
     if (cursor.Iterator.EndReached) {
+      cursor = osmd.cursor
       cursor.reset()
       extractNotes()
     } else {
@@ -163,7 +164,9 @@ function keyUp(pitch: number) {
   const key = pitch - 21
   if (expectedKeys.has(key)) {
     fills.value[key] = colorExpected
-    expectedKeyPressed -= 1
+    if (expectedKeyPressed > 0) {
+      expectedKeyPressed -= 1
+    }
   } else {
     fills.value[key] = ''
   }
@@ -196,9 +199,9 @@ onBeforeMount(async () => {
 
 <template>
   <Keyboard :fills="fills" v-model="fillColor"></Keyboard>
-  <button @click="osmd.cursor.previous(); extractNotes()">Prev</button>
-  <button @click="osmd.cursor.reset(), extractNotes()">Reset</button>
-  <button @click="osmd.cursor.next(); extractNotes()">Next</button>
+  <button @click="osmd.cursor.previous();fills.fill('');extractNotes()">Prev</button>
+  <button @click="osmd.cursor.reset();fills.fill('');extractNotes()">Reset</button>
+  <button @click="osmd.cursor.next();fills.fill('');extractNotes()">Next</button>
   <div id="sheet-container" ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">

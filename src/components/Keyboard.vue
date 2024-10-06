@@ -1,19 +1,9 @@
 <script setup lang="ts">
-import { defineProps, onMounted, defineModel, watch } from 'vue'
+import { defineProps, onMounted, defineModel } from 'vue'
 
 const props = defineProps<{
   fills: string[]
 }>()
-watch(props.fills, () => {
-  const s = props.fills.reduce((pre, cur, idx) => {
-    if (cur) {
-      pre += `${idx}: ${cur}\n`
-    }
-    return pre
-  }, '')
-  console.log(s)
-  // console.log(props.fills)
-})
 
 const model = defineModel()
 model.value = (key?: { key: number, color: string }) => {
