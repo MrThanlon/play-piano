@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import { defineProps, onMounted, watchEffect } from 'vue'
+import { defineProps, onMounted, defineModel, watch } from 'vue'
 
 const props = defineProps<{
   fills: string[]
 }>()
-watchEffect(() => {
-  console.log(props.fills)
+watch(props.fills, () => {
+  // console.log(props.fills)
 })
+
+const model = defineModel()
+model.value = (key?: { key: number, color: string }) => {
+  if (key) {
+    console.log(key)
+  } else {
+    // clear colors
+  }
+}
 
 const w = 1
 const h = 10

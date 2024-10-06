@@ -94,6 +94,7 @@ function selectInstrument() {
 
 // midi
 const fills = ref<string[]>(Array(88).fill(''))
+const fillColor = ref<(k: { key: number, color: string })=>{}>()
 const expectedKeys = new Set<number>()
 let expectedKeyPressed = 0
 const colorCorrect = '#00FF00'
@@ -104,6 +105,7 @@ function extractNotes() {
   let flagRest = true
   expectedKeys.clear()
   cursor.NotesUnderCursor().forEach(note => {
+    console.log(note.halfTone)
     if (note.halfTone > 0) {
       const key = note.halfTone + 3
       expectedKeys.add(key)
@@ -171,7 +173,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <Keyboard :fills="fills"></Keyboard>
+  <Keyboard :fills="fills" v-model="fillColor"></Keyboard>
   <div id="sheet-container" ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
