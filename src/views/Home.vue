@@ -97,6 +97,7 @@ const fills = ref<string[]>(Array(88).fill(''))
 const fillColor = ref<(k: { key: number, color: string })=>{}>()
 const expectedKeys = new Set<number>()
 let expectedKeyPressed = 0
+const colorExpected = '#0000FF'
 const colorCorrect = '#00FF00'
 const colorWrong = '#FF0000'
 const midiNotes = new Map()
@@ -104,47 +105,68 @@ const midiNotes = new Map()
 function extractNotes() {
   let flagRest = true
   expectedKeys.clear()
+  fills.value.fill('')
   cursor.NotesUnderCursor().forEach(note => {
     console.log(note.halfTone)
     if (note.halfTone > 0) {
       const key = note.halfTone + 3
       expectedKeys.add(key)
-      fills.value[key] = colorCorrect
+      fills.value[key] = colorExpected
+      console.log(`${key}: ${colorExpected}`)
       flagRest = false
     }
   })
   if (flagRest) {
     // go to next
-    cursor.next()
-    extractNotes()
-    cursor.update()
+    if (cursor.Iterator.EndReached) {
+      cursor.reset()
+      extractNotes()
+    } else {
+      cursor.next()
+      extractNotes()
+    }
   }
 }
 
 function midiNoteOn(pitch: number, velocity: number) {
   midiNoteOff(pitch)
-  const key = pitch - 21
-  if (expectedKeys.has(key)) {
-    // correct
-    expectedKeyPressed += 1
-    fills.value[key] = colorCorrect
-    if (expectedKeyPressed >= expectedKeys.size) {
-      // TODO: move sheet cursor to next
-      cursor.next()
-      extractNotes()
-      cursor.update()
-    }
-  } else {
-    fills.value[key] = colorWrong
-  }
   const envelope = player.queueWaveTable(ac, ac.destination, tone, 0, pitch, 123456789, velocity / 100)
   midiNotes.set(pitch, envelope)
 }
 
 function midiNoteOff(pitch: number) {
-  fills.value[pitch - 21] = ''
   midiNotes.get(pitch)?.cancel()
   midiNotes.delete(pitch)
+}
+
+function keyDown(pitch: number, velocity: number) {
+  midiNoteOn(pitch, velocity)
+  // keyboard display
+  const key = pitch - 21
+  if (expectedKeys.has(key)) {
+    // correct
+    expectedKeyPressed += 1
+    if (expectedKeyPressed >= expectedKeys.size) {
+      // move sheet cursor to next
+      osmd.cursor.next()
+      extractNotes()
+      expectedKeyPressed = 0
+    }
+    fills.value[key] = colorCorrect
+  } else {
+    fills.value[key] = colorWrong
+  }
+}
+
+function keyUp(pitch: number) {
+  midiNoteOff(pitch)
+  const key = pitch - 21
+  if (expectedKeys.has(key)) {
+    fills.value[key] = colorExpected
+    expectedKeyPressed -= 1
+  } else {
+    fills.value[key] = ''
+  }
 }
 
 function startPlay() {
@@ -159,9 +181,9 @@ onBeforeMount(async () => {
     }
     const type = data[0] & 0xf0
     if (type === 144) {
-      midiNoteOn(data[1], data[2])
+      keyDown(data[1], data[2])
     } else if (type === 128) {
-      midiNoteOff(data[1])
+      keyUp(data[1])
     }
     if (data && data[0] !== 0xe4) {
       // console.log(Array.from(data).map(v => v.toString(16)).join(' '))
@@ -174,6 +196,9 @@ onBeforeMount(async () => {
 
 <template>
   <Keyboard :fills="fills" v-model="fillColor"></Keyboard>
+  <button @click="osmd.cursor.previous(); extractNotes()">Prev</button>
+  <button @click="osmd.cursor.reset(), extractNotes()">Reset</button>
+  <button @click="osmd.cursor.next(); extractNotes()">Next</button>
   <div id="sheet-container" ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
@@ -190,5 +215,6 @@ onBeforeMount(async () => {
   width: 100%;
   height: 70vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>

@@ -5,6 +5,13 @@ const props = defineProps<{
   fills: string[]
 }>()
 watch(props.fills, () => {
+  const s = props.fills.reduce((pre, cur, idx) => {
+    if (cur) {
+      pre += `${idx}: ${cur}\n`
+    }
+    return pre
+  }, '')
+  console.log(s)
   // console.log(props.fills)
 })
 
