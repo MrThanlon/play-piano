@@ -13,3 +13,5 @@
 - [ ] music sheet library
 - [ ] repeat sections
 - [ ] disable hints
+- [ ] auto play
+- [ ] metronome

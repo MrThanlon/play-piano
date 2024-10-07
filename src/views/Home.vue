@@ -17,7 +17,7 @@ async function loadSheet(xml: string) {
   try {
     await osmd.load(doc)
     osmd.Sheet.Instruments.forEach(instrument => {
-      if (instrument.Name !== 'Piano') {
+      if (instrument.PartAbbreviation !== 'Pno.') {
         instrument.Visible = false
       }
       instrument.NameLabel.print = false
