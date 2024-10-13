@@ -6,6 +6,8 @@ import { OpenSheetMusicDisplay, type Cursor } from 'opensheetmusicdisplay'
 import Keyboard from '../components/Keyboard.vue'
 
 // Sheet
+const enableLeftHand = ref(true)
+const enableRightHand = ref(true)
 const div = ref<HTMLElement>()
 const input = ref<HTMLInputElement>()
 let osmd: OpenSheetMusicDisplay
@@ -96,27 +98,48 @@ function selectInstrument() {
 const fills = ref<string[]>(Array(88).fill(''))
 const fillColor = ref<(k: { key: number, color: string })=>{}>()
 const expectedKeys = new Set<number>()
-let expectedKeyPressed = 0
+const pressedKeys = new Set<number>()
+const autoplayKeys = new Set<number>()
 const colorExpected = '#0000FF'
 const colorCorrect = '#00FF00'
 const colorWrong = '#FF0000'
 const midiNotes = new Map()
 
+function setIncluded(s1: Set<number>, s2: Set<number>) {
+  return [...s1].every((x) => s2.has(x))
+}
+
 function extractNotes() {
-  let flagRest = true
   expectedKeys.clear()
   let s = ''
   cursor.NotesUnderCursor().forEach(note => {
     if (note.halfTone > 0) {
       const key = note.halfTone + 3
-      expectedKeys.add(key)
-      fills.value[key] = colorExpected
-      flagRest = false
+      // hand
+      if (note.ParentStaff.Id === 1) {
+        // right hand
+        if (enableRightHand.value) {
+          expectedKeys.add(key)
+          fills.value[key] = colorExpected
+        } else {
+          autoplayKeys.add(key)
+        }
+      } else if (note.ParentStaff.Id === 2) {
+        // left hand
+        if (enableLeftHand.value) {
+          expectedKeys.add(key)
+          fills.value[key] = colorExpected
+        } else {
+          autoplayKeys.add(key)
+        }
+      } else {
+        // ???
+        console.warn('unknown notes')
+      }
       s += key + ' '
     }
   })
-  console.log(s)
-  if (flagRest) {
+  if (expectedKeys.size === 0) {
     // go to next
     if (cursor.Iterator.EndReached) {
       cursor = osmd.cursor
@@ -126,6 +149,8 @@ function extractNotes() {
       cursor.next()
       extractNotes()
     }
+  } else {
+    console.log(s)
   }
 }
 
@@ -144,14 +169,14 @@ function keyDown(pitch: number, velocity: number) {
   midiNoteOn(pitch, velocity)
   // keyboard display
   const key = pitch - 21
+  pressedKeys.add(key)
   if (expectedKeys.has(key)) {
     // correct
-    expectedKeyPressed += 1
-    if (expectedKeyPressed >= expectedKeys.size) {
+    if (setIncluded(expectedKeys, pressedKeys)) {
+      // TODO: press the auto play keys
+
       // move sheet cursor to next
-      osmd.cursor.next()
-      extractNotes()
-      expectedKeyPressed = 0
+      moveNext()
     }
     fills.value[key] = colorCorrect
   } else {
@@ -162,14 +187,24 @@ function keyDown(pitch: number, velocity: number) {
 function keyUp(pitch: number) {
   midiNoteOff(pitch)
   const key = pitch - 21
+  pressedKeys.delete(key)
   if (expectedKeys.has(key)) {
     fills.value[key] = colorExpected
-    if (expectedKeyPressed > 0) {
-      expectedKeyPressed -= 1
-    }
   } else {
     fills.value[key] = ''
   }
+}
+
+function moveNext() {
+  osmd.cursor.next()
+  fills.value.fill('')
+  extractNotes()
+}
+
+function movePrev() {
+  osmd.cursor.next()
+  fills.value.fill('')
+  extractNotes()
 }
 
 function startPlay() {
@@ -199,9 +234,17 @@ onBeforeMount(async () => {
 
 <template>
   <Keyboard :fills="fills" v-model="fillColor"></Keyboard>
-  <button @click="osmd.cursor.previous();fills.fill('');extractNotes()">Prev</button>
+  <label>
+    <input type="checkbox" v-model="enableLeftHand">
+    Left Hand
+  </label>
+  <button @click="movePrev">Prev</button>
   <button @click="osmd.cursor.reset();fills.fill('');extractNotes()">Reset</button>
-  <button @click="osmd.cursor.next();fills.fill('');extractNotes()">Next</button>
+  <button @click="moveNext">Next</button>
+  <label>
+    <input type="checkbox" v-model="enableRightHand">
+    Right Hand
+  </label>
   <div id="sheet-container" ref="div"></div>
   <select @change="selectInstrument" v-model="instrumentIdx">
     <option v-for="(_item, idx) in instrumentKeys" :value="idx">
