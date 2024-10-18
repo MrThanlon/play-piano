@@ -202,7 +202,7 @@ function moveNext() {
 }
 
 function movePrev() {
-  osmd.cursor.next()
+  osmd.cursor.previous()
   fills.value.fill('')
   extractNotes()
 }
