@@ -114,7 +114,7 @@ function extractNotes() {
   let s = ''
   cursor.NotesUnderCursor().forEach(note => {
     if (note.halfTone > 0) {
-      const key = note.halfTone + 3
+      const key = note.halfTone - 9
       // hand
       if (note.ParentStaff.Id === 1) {
         // right hand
