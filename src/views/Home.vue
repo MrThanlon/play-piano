@@ -220,7 +220,12 @@ onBeforeMount(async () => {
     console.log(Array.from(data).map(v => v.toString(16)).join(' '))
     const type = data[0] & 0xf0
     if (type === 144) {
-      keyDown(data[1], data[2])
+      const key = data[1] - 21
+      if (pressedKeys.has(key)) {
+        keyUp(data[1])
+      } else {
+        keyDown(data[1], data[2])
+      }
     } else if (type === 128) {
       keyUp(data[1])
     }
