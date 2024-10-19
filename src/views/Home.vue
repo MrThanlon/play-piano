@@ -217,6 +217,7 @@ onBeforeMount(async () => {
     if (!data) {
       return
     }
+    console.log(Array.from(data).map(v => v.toString(16)).join(' '))
     const type = data[0] & 0xf0
     if (type === 144) {
       keyDown(data[1], data[2])
