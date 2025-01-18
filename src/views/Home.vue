@@ -47,7 +47,7 @@ onMounted(async () => {
       loadSheet(text)
     } else {
       // load default sheet
-      const text = await import('../sheets/Mary_Had_a_Little_Lamb.musicxml?raw')
+      const text = await import('../sheets/Radwimps\ -\ Date.musicxml?raw')
       loadSheet(text.default)
     }
     // for debug
@@ -150,7 +150,8 @@ function extractNotes() {
       extractNotes()
     }
   } else {
-    console.log(s)
+    if ((window as any).DEBUG)
+      console.log(s)
   }
 }
 
@@ -217,7 +218,8 @@ onBeforeMount(async () => {
     if (!data) {
       return
     }
-    console.log(Array.from(data).map(v => v.toString(16)).join(' '))
+    if ((window as any).DEBUG)
+      console.log(Array.from(data).map(v => v.toString(16)).join(' '))
     const type = data[0] & 0xf0
     if (type === 144) {
       const key = data[1] - 21
