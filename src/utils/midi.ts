@@ -42,7 +42,11 @@ export async function requestMIDI(h: (event: MIDIMessageEvent) => void) {
   }
 
   function handler(event: MIDIMessageEvent) {
-    if (event.data && (event.data[0] & 0xf0) === 0xe0) {
+    if (
+      event.data &&
+      (event.data[0] & 0xf0) === 0xb0 &&
+      event.data[1] === 0x7
+    ) {
       send(event.data);
     }
     h(event);

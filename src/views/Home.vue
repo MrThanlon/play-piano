@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, ref, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { requestMIDI } from "../utils/midi";
 import { WebAudioFontPlayer } from "@mrthanlon/webaudiofont";
 import { OpenSheetMusicDisplay, type Cursor } from "opensheetmusicdisplay";
