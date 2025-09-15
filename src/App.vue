@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent } from "vue";
 
-const Home = defineAsyncComponent(() =>
-  import('./views/Home.vue')
-)
-
+const Home = defineAsyncComponent(() => import("./views/Home.vue"));
 </script>
 
 <template>
-  <Home></Home>
+  <Suspense>
+    <Home></Home>
+  </Suspense>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

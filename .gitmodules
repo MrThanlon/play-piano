@@ -1,0 +1,3 @@
+[submodule "piano-prompter"]
+	path = piano-prompter
+	url = ../piano-prompter.git

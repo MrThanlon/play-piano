@@ -1,50 +1,52 @@
-let accessed = false
-
-export async function start(handler: (event: MIDIMessageEvent) => void) {
+export async function requestMIDI(h: (event: MIDIMessageEvent) => void) {
   if (!navigator.requestMIDIAccess) {
     // browser not support
-    throw "Your browser do not support MIDI, try Chrome or Firefox instead."
+    throw "Your browser do not support MIDI, try Chrome or Firefox instead.";
   }
-  navigator.requestMIDIAccess({ sysex: true })
-    .then(midi => {
-      accessed = true
-      console.log("MIDI ready!")
-      listInputsAndOutputs(midi)
-      startLoggingMIDIInput(midi)
-    })
-    .catch(msg => {
-      accessed = true
-      console.error(`Failed to get MIDI access - ${msg}`)
-    })
-  setTimeout(() => {
-    if (!accessed) {
-      start(handler)
-    }
-  }, 2000)
-
-  function listInputsAndOutputs(midiAccess: MIDIAccess) {
-    for (const entry of midiAccess.inputs) {
-      const input = entry[1];
-      console.log(
-        `Input port [type:'${input.type}']` +
-          ` id:'${input.id}'` +
-          ` manufacturer:'${input.manufacturer}'` +
-          ` name:'${input.name}'` +
-          ` version:'${input.version}'`,
-      );
-    }
-
-    for (const entry of midiAccess.outputs) {
-      const output = entry[1];
-      console.log(
-        `Output port [type:'${output.type}'] id:'${output.id}' manufacturer:'${output.manufacturer}' name:'${output.name}' version:'${output.version}'`
-      )
-    }
+  const midi = await navigator.requestMIDIAccess({ sysex: true });
+  for (const entry of midi.inputs) {
+    console.log(entry[1]);
   }
 
-  function startLoggingMIDIInput(midiAccess: MIDIAccess) {
-    midiAccess.inputs.forEach((entry) => {
-      entry.addEventListener('midimessage', handler)
+  for (const entry of midi.outputs) {
+    console.log(entry[1]);
+  }
+
+  midi.addEventListener("statechange", (event) => {
+    console.log("statechange", event);
+    for (const entry of midi.inputs) {
+      console.log(entry[1]);
+    }
+
+    for (const entry of midi.outputs) {
+      console.log(entry[1]);
+    }
+    midi.inputs.forEach((entry) => {
+      entry.removeEventListener("midimessage", handler);
     });
+
+    midi.inputs.forEach((entry) => {
+      entry.addEventListener("midimessage", handler);
+    });
+  });
+
+  midi.inputs.forEach((entry) => {
+    entry.addEventListener("midimessage", handler);
+  });
+
+  function send(data: Iterable<number>) {
+    for (const entry of midi.outputs) {
+      const output = entry[1];
+      output.send(data);
+    }
   }
+
+  function handler(event: MIDIMessageEvent) {
+    if (event.data && (event.data[0] & 0xf0) === 0xe0) {
+      send(event.data);
+    }
+    h(event);
+  }
+
+  return send;
 }
