@@ -1,4 +1,7 @@
-export async function requestMIDI(h: (event: MIDIMessageEvent) => void) {
+export async function useMIDI(
+  onInput: (event: MIDIMessageEvent) => void,
+  onChange?: (event: MIDIConnectionEvent) => void
+) {
   if (!navigator.requestMIDIAccess) {
     // browser not support
     throw "Your browser do not support MIDI, try Chrome or Firefox instead.";
@@ -13,7 +16,7 @@ export async function requestMIDI(h: (event: MIDIMessageEvent) => void) {
   }
 
   midi.addEventListener("statechange", (event) => {
-    console.log("statechange", event);
+    console.log("statechange");
     for (const entry of midi.inputs) {
       console.log(entry[1]);
     }
@@ -28,6 +31,7 @@ export async function requestMIDI(h: (event: MIDIMessageEvent) => void) {
     midi.inputs.forEach((entry) => {
       entry.addEventListener("midimessage", handler);
     });
+    onChange?.(event);
   });
 
   midi.inputs.forEach((entry) => {
@@ -49,7 +53,7 @@ export async function requestMIDI(h: (event: MIDIMessageEvent) => void) {
     ) {
       send(event.data);
     }
-    h(event);
+    onInput(event);
   }
 
   return send;

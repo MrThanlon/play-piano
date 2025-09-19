@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { requestMIDI } from "../utils/midi";
+import { ref, onMounted, watch } from "vue";
 import { WebAudioFontPlayer } from "@mrthanlon/webaudiofont";
 import { OpenSheetMusicDisplay, type Cursor } from "opensheetmusicdisplay";
-import Keyboard from "../components/Keyboard.vue";
+import Prompter from "../components/Prompter.vue";
+import { useKeyboard } from "../utils/keyboard";
 
 // Sheet
-const enableLeftHand = ref(true);
-const enableRightHand = ref(true);
+const storeEnableLeftHand = localStorage.getItem("enableLeftHand");
+const storeEnableRightHand = localStorage.getItem("enableRightHand");
+const enableLeftHand = ref(
+  storeEnableLeftHand !== null ? storeEnableLeftHand === "1" : true
+);
+const enableRightHand = ref(
+  storeEnableRightHand !== null ? storeEnableRightHand === "1" : true
+);
 const div = ref<HTMLElement>();
 const input = ref<HTMLInputElement>();
 let osmd: OpenSheetMusicDisplay;
@@ -94,73 +100,66 @@ function selectInstrument() {
   });
 }
 
-// midi
+watch(enableLeftHand, (value, oldValue) => {
+  localStorage.setItem("enableLeftHand", value ? "1" : "0");
+  extractNotes();
+});
+
+watch(enableRightHand, (value, oldValue) => {
+  localStorage.setItem("enableRightHand", value ? "1" : "0");
+  extractNotes();
+});
+
+// Keyboard
 const fills = ref<string[]>(Array(88).fill(""));
-const fillColor = ref<(k: { key: number; color: string }) => {}>();
-const expectedKeys = new Set<number>();
-const pressedKeys = new Set<number>();
-const autoplayKeys = new Set<number>();
 const EXPECTED = "#0000FF";
 const CORRECT = "#00FF00";
 const WRONG = "#FF0000";
-const midiNotes = new Map();
 
-const prompter = await requestMIDI(({ data }) => {
-  if (!data) {
-    return;
-  }
-  const type = data[0] & 0xf0;
-  if (type === 144) {
-    const key = data[1] - 21;
-    if (pressedKeys.has(key)) {
-      keyUp(data[1]);
-    } else {
-      keyDown(data[1], data[2]);
-    }
-  } else if (type === 128) {
-    keyUp(data[1]);
-  }
-  if (data && data[0] !== 0xe4) {
-    // console.log(Array.from(data).map(v => v.toString(16)).join(' '))
-    // console.log(`0x${data[0].toString(16)} 0x${data[1].toString(16)} 0x${data[2].toString(16)}`)
-  }
-}).catch(alert);
+const keyboard = await useKeyboard(
+  (pitch, velocity, correct) => {
+    midiNoteOn(pitch, velocity);
+    fills.value[pitch - 21] = correct ? CORRECT : WRONG;
+  },
+  (pitch, expected) => {
+    midiNoteOff(pitch);
+    fills.value[pitch - 21] = expected ? EXPECTED : "";
+  },
+  moveNext
+);
 
-function setIncluded(s1: Set<number>, s2: Set<number>) {
-  return [...s1].every((x) => s2.has(x));
-}
-
+let expected: number[] = [];
+let autoplayed: number[] = [];
 function extractNotes() {
-  expectedKeys.clear();
   let s = "";
+  expected = [];
+  autoplayed = [];
   cursor.NotesUnderCursor().forEach((note) => {
     if (note.halfTone > 0) {
-      const key = note.halfTone - 9;
+      const pitch = note.halfTone + 12;
       // hand
       if (note.ParentStaff.Id === 1) {
         // right hand
         if (enableRightHand.value) {
-          expectedKeys.add(key);
-          prompterNote(key + 21, "expected");
+          expected.push(pitch);
         } else {
-          autoplayKeys.add(key);
+          autoplayed.push(pitch);
         }
       } else if (note.ParentStaff.Id === 2) {
         // left hand
         if (enableLeftHand.value) {
-          expectedKeys.add(key);
-          prompterNote(key + 21, "expected");
+          expected.push(pitch);
         } else {
-          autoplayKeys.add(key);
+          autoplayed.push(pitch);
         }
       } else {
         // ???
         console.warn("unknown notes");
       }
-      s += key + " ";
+      s += pitch + " ";
     }
   });
-  if (expectedKeys.size === 0) {
+  if (expected.length === 0) {
     // go to next
     if (cursor.Iterator.EndReached) {
       cursor = osmd.cursor;
@@ -173,7 +172,19 @@ function extractNotes() {
   } else {
     if ((window as any).DEBUG) console.log(s);
   }
+  fills.value.forEach((current, index) => {
+    if (current !== WRONG) {
+      if (expected.includes(index + 21)) {
+        fills.value[index] = EXPECTED;
+      } else {
+        fills.value[index] = "";
+      }
+    }
+  });
+  keyboard.setValue(expected, autoplayed);
 }
+
+const midiNotes = new Map();
 
 function midiNoteOn(pitch: number, velocity: number) {
   midiNoteOff(pitch);
@@ -194,37 +205,15 @@ function midiNoteOff(pitch: number) {
   midiNotes.delete(pitch);
 }
 
-function keyDown(pitch: number, velocity: number) {
-  midiNoteOn(pitch, velocity);
-  // keyboard display
-  const key = pitch - 21;
-  pressedKeys.add(key);
-  if (expectedKeys.has(key)) {
-    // correct
-    if (setIncluded(expectedKeys, pressedKeys)) {
-      // TODO: press the auto play keys
-
-      // move sheet cursor to next
-      moveNext();
-    }
-    prompterNote(pitch, "correct");
-  } else {
-    prompterNote(pitch, "wrong");
+function moveNext(trigNotes?: boolean) {
+  if (trigNotes) {
+    [...expected, ...autoplayed].forEach((pitch) => {
+      midiNoteOn(pitch, 110);
+      setTimeout(() => {
+        midiNoteOff(pitch);
+      }, 1000);
+    });
   }
-}
-
-function keyUp(pitch: number) {
-  midiNoteOff(pitch);
-  const key = pitch - 21;
-  pressedKeys.delete(key);
-  if (expectedKeys.has(key)) {
-    prompterNote(pitch, "expected");
-  } else {
-    prompterNote(pitch, undefined);
-  }
-}
-
-function moveNext() {
   osmd.cursor.next();
   extractNotes();
 }
@@ -234,53 +223,26 @@ function movePrev() {
   extractNotes();
 }
 
+function reset() {
+  osmd.cursor.reset();
+  extractNotes();
+}
+
 function startPlay() {
   midiNoteOn(60, 20);
   midiNoteOff(60);
 }
-
-function prompterClear() {
-  prompter?.([0x93, 0x6d, 0]);
-  fills.value.fill("");
-}
-function prompterNote(
-  pitch: number,
-  type: "correct" | "wrong" | "expected" | undefined
-) {
-  if (type === "correct") {
-    prompter?.([0x91, pitch, 127]);
-    fills.value[pitch - 21] = CORRECT;
-  } else if (type === "wrong") {
-    prompter?.([0x90, pitch, 127]);
-    fills.value[pitch - 21] = WRONG;
-  } else if (type === "expected") {
-    prompter?.([0x92, pitch, 127]);
-    fills.value[pitch - 21] = EXPECTED;
-  } else {
-    prompter?.([0x93, pitch, 0]);
-    fills.value[pitch - 21] = "";
-  }
-}
 </script>
 
 <template>
-  <Keyboard :fills="fills" v-model="fillColor"></Keyboard>
+  <Prompter :fills="fills"></Prompter>
   <label>
     <input type="checkbox" v-model="enableLeftHand" />
     Left Hand
   </label>
-  <button @click="movePrev">Prev</button>
-  <button
-    @click="
-      osmd.cursor.reset();
-      prompterClear();
-      fills.fill('');
-      extractNotes();
-    "
-  >
-    Reset
-  </button>
-  <button @click="moveNext">Next</button>
+  <button @click="movePrev()">Prev</button>
+  <button @click="reset()">Reset</button>
+  <button @click="moveNext(true)">Next</button>
   <label>
     <input type="checkbox" v-model="enableRightHand" />
     Right Hand
