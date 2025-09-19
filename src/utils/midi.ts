@@ -31,7 +31,7 @@ export async function useMIDI(
     midi.inputs.forEach((entry) => {
       entry.addEventListener("midimessage", handler);
     });
-    onChange?.(event);
+    onChange?.(event as any);
   });
 
   midi.inputs.forEach((entry) => {
