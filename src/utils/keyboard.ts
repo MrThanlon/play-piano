@@ -68,20 +68,23 @@ export async function useKeyboard(
   prompter([0x93, 0x6d, 0]);
 
   return {
-    setValue(expectedPitches: number[], autoplayedPitches: number[]) {
+    setValue(
+      expectedPitches: { pitch: number; length: number }[],
+      autoplayedPitches: { pitch: number; length: number }[]
+    ) {
       expected.forEach((pitch) => {
         if (!received.has(pitch)) {
           prompter([0x93, pitch, 0]);
         }
       });
       expected.clear();
-      expectedPitches.forEach((pitch) => {
+      expectedPitches.forEach(({ pitch }) => {
         expected.add(pitch);
         prompter([0x92, pitch, 127]);
       });
 
       autoplayed.clear();
-      autoplayedPitches.forEach((pitch) => autoplayed.add(pitch));
+      autoplayedPitches.forEach(({ pitch }) => autoplayed.add(pitch));
 
       if (expectedPitches.length === 0) {
         // execute autoplayed and complete

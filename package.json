@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@mrthanlon/webaudiofont": "^4.0.0",
+    "@tonejs/midi": "^2.0.28",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "music21j": "^0.17.14",
     "opensheetmusicdisplay": "^1.8.9",
     "vue": "^3.4.29"
   },

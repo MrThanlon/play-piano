@@ -44,7 +44,7 @@ async function loadSheet(xml: string) {
 onMounted(async () => {
   if (div.value) {
     osmd = new OpenSheetMusicDisplay(div.value, {
-      backend: "svg",
+      // backend: "svg",
       drawTitle: true,
       followCursor: true,
     });
@@ -69,9 +69,26 @@ async function loadSheetFile(_event: Event) {
     return;
   }
   const file = input.value.files[0];
-  const text = await file.text();
-  localStorage.setItem("sheet", text);
-  loadSheet(text);
+  let musicxml: string;
+  // if (file.name.endsWith(".mid") || file.name.endsWith(".midi")) {
+  //   const midi = new Midi(await file.arrayBuffer());
+  //   const score = new music21.stream.Score();
+  //   for (const track of midi.tracks) {
+  //     const part = new music21.stream.Part();
+  //     for (const note of track.notes) {
+  //       const m21Note = new music21.note.Note(note.name);
+  //       m21Note.quarterLength = note.duration;
+  //       part.append(m21Note);
+  //     }
+  //     score.append(part);
+  //   }
+  //   const exporter = new music21.musicxml.m21ToXml.GeneralObjectExporter(score);
+  //   musicxml = exporter.parse();
+  // } else {
+  musicxml = await file.text();
+  // }
+  localStorage.setItem("sheet", musicxml);
+  loadSheet(musicxml);
 }
 
 // Audio
@@ -100,12 +117,12 @@ function selectInstrument() {
   });
 }
 
-watch(enableLeftHand, (value, oldValue) => {
+watch(enableLeftHand, (value) => {
   localStorage.setItem("enableLeftHand", value ? "1" : "0");
   extractNotes();
 });
 
-watch(enableRightHand, (value, oldValue) => {
+watch(enableRightHand, (value) => {
   localStorage.setItem("enableRightHand", value ? "1" : "0");
   extractNotes();
 });
@@ -128,8 +145,8 @@ const keyboard = await useKeyboard(
   moveNext
 );
 
-let expected: number[] = [];
-let autoplayed: number[] = [];
+let expected: { pitch: number; length: number }[] = [];
+let autoplayed: { pitch: number; length: number }[] = [];
 function extractNotes() {
   let s = "";
   expected = [];
@@ -137,20 +154,22 @@ function extractNotes() {
   cursor.NotesUnderCursor().forEach((note) => {
     if (note.halfTone > 0) {
       const pitch = note.halfTone + 12;
+      // TODO: get BPM
+      const length = note.Length.RealValue;
       // hand
       if (note.ParentStaff.Id === 1) {
         // right hand
         if (enableRightHand.value) {
-          expected.push(pitch);
+          expected.push({ pitch, length });
         } else {
-          autoplayed.push(pitch);
+          autoplayed.push({ pitch, length });
         }
       } else if (note.ParentStaff.Id === 2) {
         // left hand
         if (enableLeftHand.value) {
-          expected.push(pitch);
+          expected.push({ pitch, length });
         } else {
-          autoplayed.push(pitch);
+          autoplayed.push({ pitch, length });
         }
       } else {
         // ???
@@ -174,7 +193,7 @@ function extractNotes() {
   }
   fills.value.forEach((current, index) => {
     if (current !== WRONG) {
-      if (expected.includes(index + 21)) {
+      if (expected.find((note) => note.pitch === index + 21) !== undefined) {
         fills.value[index] = EXPECTED;
       } else {
         fills.value[index] = "";
@@ -207,11 +226,11 @@ function midiNoteOff(pitch: number) {
 
 function moveNext(trigNotes?: boolean) {
   if (trigNotes) {
-    [...expected, ...autoplayed].forEach((pitch) => {
-      midiNoteOn(pitch, 110);
+    [...expected, ...autoplayed].forEach(({ pitch, length }) => {
+      midiNoteOn(pitch, 30);
       setTimeout(() => {
         midiNoteOff(pitch);
-      }, 1000);
+      }, length * 1000);
     });
   }
   osmd.cursor.next();
