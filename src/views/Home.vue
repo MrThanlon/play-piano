@@ -53,7 +53,7 @@ onMounted(async () => {
       loadSheet(text);
     } else {
       // load default sheet
-      const text = await import("../sheets/Radwimps\ -\ Date.musicxml?raw");
+      const text = await import("../sheets/Frre_Jacques.musicxml?raw");
       loadSheet(text.default);
     }
     // for debug
