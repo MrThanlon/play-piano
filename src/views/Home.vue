@@ -19,6 +19,15 @@ const input = ref<HTMLInputElement>();
 let osmd: OpenSheetMusicDisplay;
 let cursor: Cursor;
 
+const builtinSheets = {
+  "Frère Jacques": "../sheets/Frre_Jacques.musicxml?raw",
+  "Mary Had a Little Lamb": "../sheets/Mary_Had_a_Little_Lamb.musicxml?raw",
+  "Re Aoharu": "../sheets/Blue_Archive_Nor_-_Re_Aoharu.musicxml?raw",
+  "Date - Radwimps": "../sheets/Radwimps - Date.musicxml?raw",
+  "That Girl - Olly Murs": "../sheets/That_Girl_Olly_Murs.musicxml?raw",
+};
+const selectedSheet = ref(builtinSheets["Frère Jacques"]);
+
 async function loadSheet(xml: string) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, "text/xml");
@@ -34,20 +43,13 @@ async function loadSheet(xml: string) {
     cursor = osmd.cursor;
     cursor.show();
     extractNotes();
+    localStorage.setItem("sheet", xml);
   } catch (e) {
     console.log(doc);
     console.log(e);
     alert(e);
   }
 }
-
-const builtinSheets = {
-  "Frère Jacques": "../sheets/Frre_Jacques.musicxml?raw",
-  "Mary Had a Little Lamb": "../sheets/Mary_Had_a_Little_Lamb.musicxml?raw",
-  "Re Arharu": "../sheets/Blue_Archive_Nor_-_Re_Aoharu.musicxml?raw",
-  "Date - Radwimps": "../sheets/Radwimps - Date.musicxml?raw",
-  "That Girl - Olly Murs": "../sheets/That_Girl_Olly_Murs.musicxml?raw",
-};
 
 onMounted(async () => {
   if (div.value) {
@@ -58,10 +60,11 @@ onMounted(async () => {
     });
     const text = localStorage.getItem("sheet");
     if (text) {
+      selectedSheet.value = "";
       loadSheet(text);
     } else {
       // load default sheet
-      const text = await import(builtinSheets["Frère Jacques"]);
+      const text = await import(selectedSheet.value);
       loadSheet(text.default);
     }
     // for debug
@@ -95,7 +98,6 @@ async function loadSheetFile(_event: Event) {
   // } else {
   musicxml = await file.text();
   // }
-  localStorage.setItem("sheet", musicxml);
   loadSheet(musicxml);
 }
 
@@ -125,11 +127,8 @@ function selectInstrument() {
   });
 }
 
-const selectedSheet = ref("Frère Jacques");
 async function selectSheet() {
-  const text = await import(
-    builtinSheets[selectedSheet.value as keyof typeof builtinSheets]
-  );
+  const text = await import(selectedSheet.value);
   loadSheet(text.default);
 }
 
@@ -305,7 +304,7 @@ function startPlay() {
       accept=".musicxml,.xml"
     />
     <select @change="selectSheet" v-model="selectedSheet">
-      <option v-for="(sheet, key) in builtinSheets" :value="key">
+      <option v-for="(sheet, key) in builtinSheets" :value="sheet">
         {{ key }}
       </option>
     </select>
