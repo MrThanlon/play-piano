@@ -20,11 +20,11 @@ let osmd: OpenSheetMusicDisplay;
 let cursor: Cursor;
 
 const builtinSheets = {
-  "Frère Jacques": "../sheets/Frre_Jacques.musicxml?raw",
-  "Mary Had a Little Lamb": "../sheets/Mary_Had_a_Little_Lamb.musicxml?raw",
-  "Re Aoharu": "../sheets/Blue_Archive_Nor_-_Re_Aoharu.musicxml?raw",
-  "Date - Radwimps": "../sheets/Radwimps - Date.musicxml?raw",
-  "That Girl - Olly Murs": "../sheets/That_Girl_Olly_Murs.musicxml?raw",
+  "Frère Jacques": "sheets/Frre_Jacques.musicxml",
+  "Mary Had a Little Lamb": "sheets/Mary_Had_a_Little_Lamb.musicxml",
+  "Re Aoharu": "sheets/Blue_Archive_Nor_-_Re_Aoharu.musicxml",
+  "Date - Radwimps": "sheets/Radwimps - Date.musicxml",
+  "That Girl - Olly Murs": "sheets/That_Girl_Olly_Murs.musicxml",
 };
 const selectedSheet = ref(builtinSheets["Frère Jacques"]);
 
@@ -64,8 +64,10 @@ onMounted(async () => {
       loadSheet(text);
     } else {
       // load default sheet
-      const text = await import(selectedSheet.value);
-      loadSheet(text.default);
+      const text = await (
+        await fetch(location.href + selectedSheet.value)
+      ).text();
+      loadSheet(text);
     }
     // for debug
     (window as any).osmd = osmd;
@@ -128,8 +130,8 @@ function selectInstrument() {
 }
 
 async function selectSheet() {
-  const text = await import(selectedSheet.value);
-  loadSheet(text.default);
+  const text = await (await fetch(location.href + selectedSheet.value)).text();
+  loadSheet(text);
 }
 
 watch(enableLeftHand, (value) => {
