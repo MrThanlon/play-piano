@@ -41,6 +41,15 @@ async function loadSheet(xml: string) {
   }
 }
 
+const builtinSheets = {
+  "Frère Jacques": "../sheets/Frre_Jacques.musicxml?raw",
+  "Mary Had a Little Lamb": "../sheets/Mary_Had_a_Little_Lamb.musicxml?raw",
+  "Re Arharu": "../sheets/Blue_Archive_Nor_-_Re_Aoharu.musicxml?raw",
+  "Date - Radwimps": "../sheets/Radwimps - Date.musicxml?raw",
+  "That Girl - Olly Murs": "../sheets/That_Girl_Olly_Murs.musicxml?raw",
+  "MozaVeilSample.xml": "../sheets/MozaVeilSample.xml?raw",
+};
+
 onMounted(async () => {
   if (div.value) {
     osmd = new OpenSheetMusicDisplay(div.value, {
@@ -53,7 +62,7 @@ onMounted(async () => {
       loadSheet(text);
     } else {
       // load default sheet
-      const text = await import("../sheets/Frre_Jacques.musicxml?raw");
+      const text = await import(builtinSheets["Frère Jacques"]);
       loadSheet(text.default);
     }
     // for debug
@@ -115,6 +124,14 @@ function selectInstrument() {
     player.cancelQueue(ac);
     console.log(tone);
   });
+}
+
+const selectedSheet = ref("Frère Jacques");
+async function selectSheet() {
+  const text = await import(
+    builtinSheets[selectedSheet.value as keyof typeof builtinSheets]
+  );
+  loadSheet(text.default);
 }
 
 watch(enableLeftHand, (value) => {
@@ -267,19 +284,34 @@ function startPlay() {
     Right Hand
   </label>
   <div id="sheet-container" ref="div"></div>
-  <select @change="selectInstrument" v-model="instrumentIdx">
-    <option v-for="(_item, idx) in instrumentKeys" :value="idx">
-      {{ getInstrumentTitle(idx) }}
-    </option>
-  </select>
-  <button @click="startPlay">play</button>
-  <input
-    @change="loadSheetFile"
-    ref="input"
-    type="file"
-    accept=".musicxml,.xml"
-  />
-  <a href="https://github.com/MrThanlon/play-piano" target="_blank">About</a>
+  <div
+    style="
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    "
+  >
+    <select @change="selectInstrument" v-model="instrumentIdx">
+      <option v-for="(_item, idx) in instrumentKeys" :value="idx">
+        {{ getInstrumentTitle(idx) }}
+      </option>
+    </select>
+    <button @click="startPlay">play</button>
+    <input
+      @change="loadSheetFile"
+      ref="input"
+      type="file"
+      accept=".musicxml,.xml"
+    />
+    <select @change="selectSheet" v-model="selectedSheet">
+      <option v-for="(sheet, key) in builtinSheets" :value="key">
+        {{ key }}
+      </option>
+    </select>
+    <a href="https://github.com/MrThanlon/play-piano" target="_blank">About</a>
+  </div>
 </template>
 
 <style scoped>
