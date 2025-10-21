@@ -47,7 +47,6 @@ const builtinSheets = {
   "Re Arharu": "../sheets/Blue_Archive_Nor_-_Re_Aoharu.musicxml?raw",
   "Date - Radwimps": "../sheets/Radwimps - Date.musicxml?raw",
   "That Girl - Olly Murs": "../sheets/That_Girl_Olly_Murs.musicxml?raw",
-  "MozaVeilSample.xml": "../sheets/MozaVeilSample.xml?raw",
 };
 
 onMounted(async () => {
