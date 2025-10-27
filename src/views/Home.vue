@@ -135,11 +135,18 @@ async function selectSheet() {
 }
 
 watch(enableLeftHand, (value) => {
+  if (!value && !enableRightHand.value) {
+    // at least one hand should be enabled
+    enableRightHand.value = true;
+  }
   localStorage.setItem("enableLeftHand", value ? "1" : "0");
   extractNotes();
 });
 
 watch(enableRightHand, (value) => {
+  if (!value && !enableLeftHand.value) {
+    enableLeftHand.value = true;
+  }
   localStorage.setItem("enableRightHand", value ? "1" : "0");
   extractNotes();
 });
